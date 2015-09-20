@@ -9,7 +9,10 @@ if ( !defined('ABSPATH') ) exit('No direct access allowed');
 
 global $lvl99_image_import;
 $textdomain = $lvl99_image_import->get_textdomain();
-$images_imported = !empty($lvl99_image_import->results['images_imported']) ? $lvl99_image_import->results['images_imported'] : array();
+
+$importtype = $lvl99_image_import->results['importtype'];
+$images_imported = $lvl99_image_import->results['images_imported'];
+$posts_affected = $lvl99_image_import->results['posts_affected'];
 ?>
 
 <div class="wrap">
@@ -26,15 +29,23 @@ $images_imported = !empty($lvl99_image_import->results['images_imported']) ? $lv
   <div class="lvl99-plugin-page">
 
     <?php if ( !empty($images_imported) && count($images_imported) > 0 ) : ?>
-    <div class="lvl99-plugin-intro">Finished importing <?php echo count($images_imported); ?> images:</div>
-
-    <div class="lvl99-import-image-imported">
-      <?php foreach( $images_imported as $num => $image ) : ?>
-      <div class="lvl99-import-image-imported-item">
-        Imported <i><?php echo $image['src']; ?></i> as <b><?php echo $image['as']; ?></b>
-      </div>
-      <?php endforeach; ?>
+    <div class="lvl99-plugin-intro">
+      <?php if ( $importtype == 'medialibrary' ) : ?>
+      <?php echo sprintf( __('Importing %d images into the Media Library...', $textdomain), count($images_imported) ); ?>
+      <?php elseif ( $importtype == 'change' ) : ?>
+      <?php echo sprintf( __('Changed %d image references in %d posts', $textdomain), count($images_imported), count($posts_affected) ); ?>
+      <?php endif; ?>
     </div>
+
+    <ul class="lvl99-import-image-imported-list">
+      <?php if ( $importtype == 'change' ) : ?>
+      <?php foreach( $images_imported as $num => $image ) : ?>
+      <li class="lvl99-import-image-imported-item">
+        Changed <i><?php echo $image['src']; ?></i> to <b><?php echo $image['as']; ?></b> (found in <?php echo count($image['posts']); ?> posts)
+      </li>
+      <?php endforeach; ?>
+      <?php endif; ?>
+    </ul>
     <?php else : ?>
     <p>Something didn't work correctly...</p>
     <pre>

@@ -31,8 +31,12 @@ $posts_affected = $lvl99_image_import->results['posts_affected'];
 
     <?php if ( !empty($images) && count($images) > 0 ) : ?>
     <form method="post">
-      <input type="hidden" name="lvl99-image-import" value="imported" />
-      <div class="lvl99-plugin-intro">Scanning found <?php echo count($images); ?> image references to <?php if ( $importtype == 'medialibrary' ) : ?>import<?php elseif ( $importtype == 'change' ) : ?>change<?php endif; ?> within <?php echo count($posts_affected); ?> posts.</div>
+      <input type="hidden" name="<?php echo esc_attr($textdomain); ?>" value="imported" />
+      <input type="hidden" name="<?php echo esc_attr($textdomain); ?>_importtype" value="<?php echo esc_attr($importtype); ?>" />
+
+      <div class="lvl99-plugin-intro">
+        <?php echo sprintf( __('Scanning found %d images references to %s within %d posts', $textdomain), count($images), ($importtype == 'medialibrary' ? __('import', $textdomain) : __('change', $textdomain)), count($posts_affected) ); ?>
+      </div>
 
       <?php if ( count($filters) > 0 ) : ?>
       <div class="lvl99-image-import-filters-applied">

@@ -1,12 +1,29 @@
 <?php
 /*
 Plugin Name: LVL99 Image Import
-Plugin URI: http://www.lvl99.com/code/image-import
-Description: A means to import all externally referenced images into the media library
+Plugin URI: http://www.github.com/lvl99/lvl99-image-import
+Description: A means to import into the Media Library or change all images references within posts.
 Author: Matt Scheurich
 Author URI: http://www.lvl99.com/
-Version: 0.1.0
+Version: 0.1.0-alpha
 Text Domain: lvl99-image-import
+*/
+
+/*
+Copyright (C) 2015 Matt Scheurich (matt@lvl99.com)
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; version 2.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+MA 02110-1301, USA.
 */
 
 if ( !defined('ABSPATH') ) exit( 'No direct access allowed' );
@@ -1732,6 +1749,23 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
 
       //
       // $this->route['request']['post'][];
+    }
+
+    /*
+    Change all image references
+
+    @method change_image_references
+    @since 0.1.0
+    @returns {Void}
+    */
+    public function change_image_references ()
+    {
+      global $wpdb;
+
+      $this->check_admin();
+
+      // Images to change within posts
+      $images = $this->route->request['post']['images'];
     }
   }
 }
