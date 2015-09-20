@@ -1,0 +1,39 @@
+{
+  "name": "lvl99-image-import",
+  "version": "0.1.0",
+  "description": "Import images referenced within posts into WordPress Media Library (or change the references). Helps when migrating WordPress.com site data to self-hosted WP install.",
+  "main": "lvl99-image-import.php",
+  "dependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {},
+  "keywords": [
+    "wordpress",
+    "import",
+    "image",
+    "media",
+    "media library"
+  ],
+  "author": "Matt Scheurich <matt@lvl99.com>",
+  "license": "GPL-2.0",
+  "homepage": "http://www.github.com/lvl99/lvl99-image-import",
+  "devDependencies": {
+    "browserify": "^9.0.3",
+    "del": "^1.2.1",
+    "gulp": "^3.8.11",
+    "gulp-autoprefixer": "^2.1.0",
+    "gulp-concat": "^2.5.2",
+    "gulp-less": "^3.0.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-sourcemaps": "^1.5.0",
+    "gulp-uglify": "^1.1.0",
+    "gulp-uglifycss": "^1.0.4",
+    "gulp-util": "^3.0.4",
+    "gulp-watch": "^4.2.0",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0",
+    "vinyl-transform": "^1.0.0",
+    "watchify": "^2.4.0"
+  }
+}

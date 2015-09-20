@@ -1,0 +1,97 @@
+/*
+ * LVL99 Image Import
+ */
+
+@import 'lvl99-plugin.less';
+
+.clearfix {
+  &:before,
+  &:after {
+    content: ' ';
+    display: table;
+  }
+
+  &:after {
+    clear: both;
+  }
+}
+
+.lvl99-image-import-filter-item {
+  .clearfix;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
+
+.lvl99-image-import-filter-method,
+.lvl99-image-import-filter-input,
+.lvl99-image-import-filter-output,
+.lvl99-image-import-filter-controls {
+  float: left;
+  line-height: 2em;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+
+.lvl99-image-import-filter-input,
+.lvl99-image-import-filter-output {
+  input[type=text] {
+    width: 100%;
+    min-width: 200px;
+    box-sizing: border-box;
+    padding: 0.3em;
+  }
+}
+
+.lvl99-image-import-posttypes-list {
+  margin-left: 2em;
+  margin-top: 1em;
+}
+
+.widefat {
+  .lvl99-image-import-col-do,
+  .lvl99-image-import-col-src,
+  .lvl99-image-import-col-as {
+    box-sizing: border-box;
+  }
+
+  .lvl99-image-import-col-do {
+    width: 2%;
+    text-align: center;
+  }
+
+  .lvl99-image-import-col-src,
+  .lvl99-image-import-col-as {
+    width: 49%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-wrap: break-word;
+    text-align: left;
+  }
+
+  .lvl99-image-import-col-src {
+    a {
+      display: block;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      word-wrap: break-word;
+    }
+  }
+
+  .lvl99-image-import-col-as {
+    input[type=text] {
+      display: block;
+      box-sizing: border-box;
+      width: 100%;
+    }
+  }
+}
+
+.lvl99-image-import-filters-applied {
+  border: solid 1px #ccc;
+  background: #eee;
+  padding: 0 1em;
+  margin-bottom: 1em;
+}

@@ -1,0 +1,147 @@
+/*
+ * LVL99 Image Import
+ */
+/*
+ * LVL99 Plugin base styles
+ */
+.lvl99-plugin-page {
+  padding: 1em 3em 3em;
+  background: #fff;
+  border: solid 1px #ccc;
+  border-top: 0;
+}
+.lvl99-plugin-intro {
+  padding-bottom: 1em;
+  margin: 1em 0 1em;
+  border-bottom: solid 1px #e5e5e5;
+  font-size: 1.2em;
+  line-height: 1.4em;
+}
+.lvl99-plugin-intro p {
+  font-size: 1.1em;
+  line-height: 1.4em;
+}
+.lvl99-plugin-section {
+  margin: 3em 0;
+}
+.list-text {
+  display: block;
+  list-style: disc;
+  margin-left: 2em;
+}
+.list-text li {
+  list-style: disc;
+}
+.lvl99-plugin-option {
+  padding-bottom: 1em;
+}
+.lvl99-plugin-option-label {
+  display: block;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  font-size: 1.2em;
+  font-weight: bold;
+}
+.lvl99-plugin-option-help > :first-child {
+  margin-top: 0;
+}
+.lvl99-plugin-option-help .small {
+  color: #999;
+  font-size: 0.9em;
+}
+.lvl99-plugin-option-help-after {
+  color: #999;
+}
+.lvl99-plugin-option-value {
+  display: block;
+}
+.lvl99-plugin-option-value-label {
+  display: inline-block;
+  vertical-align: top;
+}
+.lvl99-plugin-option-value-description {
+  color: #999;
+  font-size: 0.9em;
+}
+.lvl99-sortable-handle {
+  font-family: 'FontAwesome';
+  padding-left: 0.3em;
+  padding-right: 0.3em;
+}
+.clearfix:before,
+.clearfix:after {
+  content: ' ';
+  display: table;
+}
+.clearfix:after {
+  clear: both;
+}
+.lvl99-image-import-filter-item {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
+.lvl99-image-import-filter-item:before,
+.lvl99-image-import-filter-item:after {
+  content: ' ';
+  display: table;
+}
+.lvl99-image-import-filter-item:after {
+  clear: both;
+}
+.lvl99-image-import-filter-method,
+.lvl99-image-import-filter-input,
+.lvl99-image-import-filter-output,
+.lvl99-image-import-filter-controls {
+  float: left;
+  line-height: 2em;
+  vertical-align: middle;
+  margin-right: 10px;
+}
+.lvl99-image-import-filter-input input[type=text],
+.lvl99-image-import-filter-output input[type=text] {
+  width: 100%;
+  min-width: 200px;
+  box-sizing: border-box;
+  padding: 0.3em;
+}
+.lvl99-image-import-posttypes-list {
+  margin-left: 2em;
+  margin-top: 1em;
+}
+.widefat .lvl99-image-import-col-do,
+.widefat .lvl99-image-import-col-src,
+.widefat .lvl99-image-import-col-as {
+  box-sizing: border-box;
+}
+.widefat .lvl99-image-import-col-do {
+  width: 2%;
+  text-align: center;
+}
+.widefat .lvl99-image-import-col-src,
+.widefat .lvl99-image-import-col-as {
+  width: 49%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-wrap: break-word;
+  text-align: left;
+}
+.widefat .lvl99-image-import-col-src a {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-wrap: break-word;
+}
+.widefat .lvl99-image-import-col-as input[type=text] {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+}
+.lvl99-image-import-filters-applied {
+  border: solid 1px #ccc;
+  background: #eee;
+  padding: 0 1em;
+  margin-bottom: 1em;
+}
