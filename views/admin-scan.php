@@ -10,7 +10,7 @@ if ( !defined('ABSPATH') ) exit('No direct access allowed');
 global $lvl99_image_import;
 $textdomain = $lvl99_image_import->get_textdomain();
 
-$posttypes = get_post_types( array(
+$posttypes_all = get_post_types( array(
   'public' => true,
   '_builtin' => true,
 ), 'names', 'or' );
@@ -43,6 +43,24 @@ $scan_options = array(
     // 'help' => _x('<p>Changes the importing behaviour.</p>', 'field help: importtype', $this->textdomain),
   ),
 );
+
+// Saved options to re-configure
+$posted = NULL;
+if ( !empty($lvl99_image_import->route['request']) )
+{
+  $posted = $lvl99_image_import->route['request']['post'];
+}
+
+$posttypes = isset($posted['posttypes']) ? $posted['posttypes'] : 'all';
+$posttypes_selected = isset($posted['posttypes_selected']) ? $posted['posttypes_selected'] : $posttypes_all;
+$filters = isset($posted['filters']) ? $posted['filters'] : array(
+  array(
+    'method' => 'exclude',
+    'input' => home_url('/'),
+    'output' => '',
+    '_initial' => 1,
+  ),
+);
 ?>
 
 <div class="wrap">
@@ -66,13 +84,13 @@ $scan_options = array(
         <label for="<?php echo $textdomain; ?>_posttypes" class="lvl99-plugin-option-label"><?php _ex( 'Post types to scan', 'field label: posttypes', $textdomain ); ?></label>
 
         <ul class="lvl99-image-import-posttypes">
-          <li class="lvl99-image-import-posttypes-all"><label><input type="radio" name="<?php echo $textdomain; ?>_posttypes" value="all" checked="checked"/> <?php _ex('Scan all post types', 'field value: posttypes=all', $textdomain); ?></label></li>
-          <?php if ( count($posttypes) > 0 ) : ?>
+          <li class="lvl99-image-import-posttypes-all"><label><input type="radio" name="<?php echo $textdomain; ?>_posttypes" value="all"<?php if ( $posttypes == 'all' ) : ?> checked="checked"<?php endif; ?>/> <?php _ex('Scan all post types', 'field value: posttypes=all', $textdomain); ?></label></li>
+          <?php if ( count($posttypes_all) > 0 ) : ?>
           <li  class="lvl99-image-import-posttypes-selected">
-            <label><input type="radio" name="<?php echo $textdomain; ?>_posttypes" value="selected" /> <?php _ex( 'Scan selected post types', 'field value: posttypes=some', $textdomain ); ?></label>
+            <label><input type="radio" name="<?php echo $textdomain; ?>_posttypes" value="selected"<?php if ( $posttypes == 'selected' ) : ?>checked="checked"<?php endif; ?>/> <?php _ex( 'Scan selected post types', 'field value: posttypes=some', $textdomain ); ?></label>
             <ul class="lvl99-image-import-posttypes-list"
-            <?php foreach( $posttypes as $posttype ) : ?>
-              <li class="lvl99-image-import-posttypes-list-item"><label><input type="checkbox" name="<?php echo $textdomain; ?>_posttypes_selected[]" value="<?php echo esc_attr($posttype); ?>" checked="checked" disabled="disabled" /> <?php echo $posttype; ?></label></li>
+            <?php foreach( $posttypes_all as $posttype ) : ?>
+              <li class="lvl99-image-import-posttypes-list-item"><label><input type="checkbox" name="<?php echo $textdomain; ?>_posttypes_selected[]" value="<?php echo esc_attr($posttype); ?>"<?php if ( in_array($posttype, $posttypes_selected) ) : ?> checked="checked"<?php endif; ?><?php if ( $posttypes == 'all' ) : ?> disabled="disabled"<?php endif; ?>/> <?php echo $posttype; ?></label></li>
             <?php endforeach; ?>
             </ul>
           </li>
@@ -91,33 +109,63 @@ $scan_options = array(
         </div>
 
         <div id="lvl99-image-import-filters">
-          <?php // Default filter excludes locally hosted images ?>
+          <?php foreach ( $filters as $num => $filter ) : ?>
           <div class="lvl99-image-import-filter-item">
             <div class="lvl99-image-import-filter-method">
-              Exclude image if matches...
-              <input type="hidden" name="lvl99-image-import_filters[0][method]" value="exclude" />
+              <?php if ( !empty($filter['_initial']) ) : ?>
+              <?php if ( $filter['method'] == 'exclude' ) : ?>
+              Exclude if matches...
+              <?php elseif ( $filter['method'] == 'include' ) : ?>
+              Include if matches...
+              <?php elseif ( $filter['method'] == 'replace' ) : ?>
+              Search &amp; Replace
+              <?php endif; ?>
+              <input type="hidden" name="lvl99-image-import_filters[<?php echo $num; ?>][method]" value="<?php echo esc_attr($filter['method']); ?>" />
+              <input type="hidden" name="lvl99-image-import_filters[<?php echo $num; ?>][_initial]" value="1" />
+              <?php else : ?>
+              <select name="lvl99-image-import_filters[<?php echo $num; ?>][method]">
+                <option value="exclude"<?php if ($filter['method'] == 'exclude') : ?> selected="selected"<?php endif; ?>>Exclude if matches...</option>
+                <option value="include"<?php if ($filter['method'] == 'include') : ?> selected="selected"<?php endif; ?>>Include if matches...</option>
+                <option value="replace"<?php if ($filter['method'] == 'replace') : ?> selected="selected"<?php endif; ?>>Search &amp; Replace</option>
+              </select>
+              <?php endif; ?>
             </div>
             <div class="lvl99-image-import-filter-input">
+              <?php if ( !empty($filter['_initial']) ) : ?>
               <code><?php echo esc_attr(home_url('/')); ?></code>
-              <input type="hidden" name="lvl99-image-import_filters[0][input]" value="<?php echo esc_attr(home_url('/')); ?>" />
+              <input type="hidden" name="lvl99-image-import_filters[<?php echo $num; ?>][input]" value="<?php echo esc_attr(home_url('/')); ?>" />
+              <?php else : ?>
+              <input type="text" name="<?php echo esc_attr($textdomain); ?>_filters[<?php echo $num; ?>][input]" value="<?php echo esc_attr($filter['input']); ?>" placeholder="Search for..." />
+              <?php endif; ?>
             </div>
-            <div class="lvl99-image-import-filter-output"></div>
-            <div class="lvl99-import-image-filter-controls"><a href="javascript:void(0)" class="button button-secondary button-small" title="This is to avoid changing any existing local image references. It has a high probability of screwing up your WP database if you disable this filter. That said, you're welcome to remove this filter via developer tools and proceed (just make sure you back up your WP database first)." onclick="alert('This is to avoid changing any existing local image references. It has a high probability of screwing up your WP database if you disable this filter. That said, you\'re welcome to remove this filter via developer tools and proceed (just make sure you back up your WP database first).');">?</a></div>
+            <div class="lvl99-image-import-filter-output">
+              <?php if ( $filter['method'] == 'replace' ) : ?>
+              <input type="text" name="<?php echo esc_attr($textdomain); ?>_filters[<?php echo $num; ?>][output]" value="<?php echo esc_attr($filter['output']); ?>" placeholder="Replace with empty string" />
+              <?php endif; ?>
+            </div>
+            <div class="lvl99-import-image-filter-controls">
+              <?php if ( !empty($filter['_initial']) ) : ?>
+              <a href="javascript:void(0)" class="button button-secondary button-small" title="This is to avoid changing any existing local image references. It has a high probability of screwing up your WP database if you disable this filter. That said, you're welcome to remove this filter via developer tools and proceed (just make sure you back up your WP database first)." onclick="alert('This is to avoid changing any existing local image references. It has a high probability of screwing up your WP database if you disable this filter. That said, you\'re welcome to remove this filter via developer tools and proceed (just make sure you back up your WP database first).');">?</a>
+              <?php else : ?>
+              <a href="#remove-filter" class="button button-secondary button-small">Remove</a>
+              <?php endif; ?>
+            </div>
           </div>
+          <?php endforeach; ?>
         </div>
         <p><a href="#add-filter" class="button button-secondary"><?php echo __( 'Add Filter', $textdomain ); ?></a></p>
 
         <div class="lvl99-plugin-option-help lvl99-plugin-option-help-after">
           <ul>
-            <li><b>Include image if matches...</b>: If value matches any URLs, includes the image into the collection of images to import</li>
-            <li><b>Exclude image if matches...</b>: If value matches any URLs, excludes the image from the collection of images to import.</li>
+            <li><b>Include if matches...</b>: If value matches any URLs, includes the image into the collection of images to import</li>
+            <li><b>Exclude if matches...</b>: If value matches any URLs, excludes the image from the collection of images to import.</li>
             <li><b>Search &amp; Replace</b>: Search for strings to then replace with another string. This filter can aid renaming files before importing to the Media Library and/or changing image references to reference other domains.</li>
           </ul>
         </div>
       </div>
 
       <div class="lvl99-plugin-option">
-        <input type="submit" name="lvl99_image_import_submit" value="<?php _ex('Scan posts for image references', 'scan admin page button-submit label', $textdomain); ?>" class="button button-primary" />
+        <input type="submit" name="<?php echo esc_attr($textdomain); ?>_submit" value="<?php _ex('Scan posts for image references', 'scan admin page button-submit label', $textdomain); ?>" class="button button-primary" />
       </div>
 
     </form>

@@ -27,10 +27,24 @@
       }
     });
 
+    // Enable/disable all scanned image references
+    $doc.on( 'change', '.lvl99-image-import-col-do input[name=lvl99-image-import_selectall]', function (event) {
+      var $elem = $(this),
+          $checkboxes = $('.lvl99-image-import-col-do input[type=checkbox]');
+
+      console.log( $elem.is(':checked') );
+
+      if ( $elem.is(':checked') ) {
+        $checkboxes.attr('checked', 'checked');
+      } else {
+        $checkboxes.removeAttr('checked');
+      }
+    });
+
     // Add filter
     $doc.on( 'click', 'a[href=#add-filter]', function (event) {
       var count = $('.lvl99-image-import-filter-item').length,
-          $newFilter = $('<div class="lvl99-image-import-filter-item"><div class="lvl99-image-import-filter-method"><select name="lvl99-image-import_filters['+count+'][method]"><option value="include">Include if matches...</option><option value="exclude">Exclude if matches...</option><option value="replace">Search &amp; Replace</option></select></div><div class="lvl99-image-import-filter-input"><input type="text" name="lvl99-image-import_filters['+count+'][input]" value="" placeholder="Search for..." /></div><div class="lvl99-image-import-filter-output"><input type="text" name="lvl99-image-import_filters['+count+'][output]" value="" placeholder="Replace with empty string" style="display: none" /></div><div class="lvl99-import-image-filter-controls"><a href="#delete-filter" class="button button-secondary button-small">Delete</a></div></div>');
+          $newFilter = $('<div class="lvl99-image-import-filter-item"><div class="lvl99-image-import-filter-method"><select name="lvl99-image-import_filters['+count+'][method]"><option value="include">Include if matches...</option><option value="exclude">Exclude if matches...</option><option value="replace">Search &amp; Replace</option></select></div><div class="lvl99-image-import-filter-input"><input type="text" name="lvl99-image-import_filters['+count+'][input]" value="" placeholder="Search for..." /></div><div class="lvl99-image-import-filter-output"><input type="text" name="lvl99-image-import_filters['+count+'][output]" value="" placeholder="Replace with empty string" style="display: none" /></div><div class="lvl99-import-image-filter-controls"><a href="#remove-filter" class="button button-secondary button-small">Remove</a></div></div>');
 
       event.preventDefault();
       $newFilter.appendTo('#lvl99-image-import-filters');
@@ -53,8 +67,8 @@
       }
     })
 
-    // Delete filter
-    $doc.on( 'click', 'a[href=#delete-filter]', function (event) {
+    // Remove filter
+    $doc.on( 'click', 'a[href=#remove-filter]', function (event) {
       var $filter = $(this).parents('.lvl99-image-import-filter-item');
       $filter.remove();
     });

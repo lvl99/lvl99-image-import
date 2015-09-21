@@ -116,9 +116,11 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
       'importtype' => FALSE, // The type of importation method: `medialibrary` or `change`
       'filters' => array(), // Filters used in the results
       'posts_affected' => array(), // Array of posts that have image references
+      'posts_excluded' => array(), // Array of posts that were excluded from updating
       'images_import' => array(), // Array of images to import
       'images_excluded' => array(), // Array of images excluded from import
       'images_imported' => array(), // Array of images that were successfully imported
+      'debug' => array(),
     );
 
     /*
@@ -143,9 +145,6 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
       add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ), 10, 1 );
 
       add_filter( 'plugin_action_links_' . plugin_basename(__FILE__), array( &$this, 'admin_plugin_links' ) );
-
-      // Shortcode
-      // add_shortcode( 'lvl99-image-import', array( &$this, 'shortcode_LVL99_Image_Import') );
     }
 
     /*
@@ -1192,6 +1191,18 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
     }
 
     /*
+    Initial scan form to configure scan
+
+    @method route_scan
+    @since 0.1.0
+    @returns {Void}
+    */
+    public function route_scan ()
+    {
+      $_REQUEST['action'] = 'scan';
+    }
+
+    /*
     Scan posts for external image references.
 
     @method route_scanned
@@ -1229,16 +1240,26 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
     {
       $this->check_admin();
 
-      // Do whatever here
-      $this->import_posts();
+      // Import the images into the media library
+      $this->results['importtype'] = $this->route['request']['post']['importtype'];
+      if ( $this->results['importtype'] == 'medialibrary' )
+      {
+        $this->import_images();
+
+      // If `change` is only necessary, set the collection to reference the images posted
+      } else if ( $this->results['importtype'] == 'change' ) {
+        $this->results['images_imported'] = $this->route['request']['post']['images'];
+      }
 
       // If found images, process them depending on filters
-      if ( isset($this->$results['images_imported']) && count($this->results['images_imported']) > 0 )
+      if ( isset($this->results['images_imported']) && count($this->results['images_imported']) > 0 )
       {
+        // Update the image references
+        $this->update_image_references();
         $_REQUEST['action'] = 'imported';
 
       } else {
-        $this->admin_error( 'Imported no images!' );
+        $this->admin_error( 'Affected no images!' );
         $_REQUEST['action'] = 'scan';
       }
     }
@@ -1500,21 +1521,20 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
       $filters = !empty($this->route['request']['post']['filters']) ? $this->route['request']['post']['filters'] : array();
       $count_image_references = 0;
 
-      // Default filter to not detect any images hosted on this site
-      // if ( count($filters) == 0 ) {
-      //   $filters[] = array(
-      //     'method' => 'exclude',
-      //     'input' => home_url('/'),
-      //     'output' => '',
-      //   );
-      // }
-
-      // Process replace filters
+      // Process filters with regex input
       if ( count($filters) > 0 )
       {
         foreach ( $filters as $num => $filter )
         {
-          if ( $filter['method'] == 'replace' && preg_match( '/^\//', $filter['input'] ) )
+          // Empty input? Error
+          if ( empty($filter['input']) )
+          {
+            $this->admin_error( 'Empty filter input detected.' );
+            return $this->results;
+          }
+
+          // Format regex inputs
+          if ( preg_match( '/^\//', $filter['input'] ) )
           {
             $filters[$num]['input'] = stripslashes($filter['input']);
           }
@@ -1620,6 +1640,10 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
                   // Regexp
                   if ( preg_match( '/^\//', $filter['input'] ) )
                   {
+                    $this->debug( array(
+                      'filter_include_input' => $filter['input'],
+                    ) );
+
                     if ( preg_match( $filter['input'], $image['src'] ) )
                     {
                       $image_include = TRUE;
@@ -1640,6 +1664,10 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
                   // Regexp
                   if ( preg_match( '/^\//', $filter['input'] ) )
                   {
+                    $this->debug( array(
+                      'filter_exclude_input' => $filter['input'],
+                    ) );
+
                     if ( preg_match( $filter['input'], $image['src'] ) )
                     {
                       $image_include = FALSE;
@@ -1656,6 +1684,10 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
 
                 // Search and replace in `as` name (for changing image references)
                 case 'replace':
+                  $this->debug( array(
+                    'filter_replace_input' => $filter['input'],
+                  ) );
+
                   // Regexp search/replace
                   if ( preg_match( '/^\//', $filter['input'] ) )
                   {
@@ -1709,6 +1741,8 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
     /*
     Get image names
 
+    @TODO basename() does similar things, so may need to refactor to make simpler
+
     @method get_image_names
     @since 0.1.0
     @param {String} $image_name The image's name
@@ -1735,37 +1769,342 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
     }
 
     /*
-    Import all external images
+    Import all images
 
-    @method import_posts
+    @method import_images
+    @private
     @since 0.1.0
     @returns {Void}
     */
-    public function import_posts ()
+    private function import_images ()
     {
       global $wpdb;
 
+      require_once( ABSPATH . 'wp-admin/includes/image.php' );
+
       $this->check_admin();
 
-      //
-      // $this->route['request']['post'][];
+      $images_import = $this->route['request']['post']['images'];
+      $images_imported = array();
+      $images_excluded = array();
+      $upload_dir = wp_upload_dir();
+
+      // Import each image
+      if ( count($images_import) > 0 )
+      {
+        foreach ( $images_import as $hash => $image )
+        {
+          // Gotta be right, yo
+          if ( is_array($image) && array_key_exists('src', $image) && array_key_exists('as', $image) && array_key_exists('posts', $image) )
+          {
+            // Convert posts string to array
+            $image['posts'] = $this->to_array($image['posts']);
+
+            // If `do` is disabled, then skip the image
+            if ( !array_key_exists('do', $image) || !$this->sanitise_option_boolean($image['do']) )
+            {
+              $image['status'] = 'user_excluded';
+              array_push( $images_excluded, $image );
+              continue;
+            }
+
+            // Download the image to the uploads directory
+            $filename = basename($image['as']);
+            $image_url = trailingslashit($upload_dir['url']) . $filename;
+            $image_path = trailingslashit($upload_dir['path']) . $filename;
+            $image_dl = $this->download_image( $image['src'], $image_path );
+            $filetype = wp_check_filetype( $filename, null );
+
+            // Check if attachment with `guid` already in WP, if not add new attachment
+            $sanitise_sql_url = $this->sanitise_sql($image_url);
+            $check_attachment = $wpdb->get_row( "SELECT ID FROM $wpdb->posts WHERE $wpdb->posts.post_type = 'attachment' AND guid = '$sanitise_sql_url'", ARRAY_A );
+
+            // Attachment already exists
+            if ( !is_null($check_attachment) )
+            {
+              $image['as'] = $image_url;
+              $images_imported[$hash] = $image;
+
+            // Attachment doesn't exist, download new file and add to the media library
+            } else {
+              // Error downloading image
+              if ( !$image_dl )
+              {
+                $image['status'] = 'error_dl';
+                array_push( $images_excluded, $image );
+                continue;
+              }
+
+              // Build attachment info
+              $image['as'] = $image_url;
+              $attachment = array(
+                'guid' => $image_url,
+                'post_title' => $filename,
+                'post_content' => '',
+                'post_mime_type' => $filetype['type'],
+                'post_status' => 'inherit',
+              );
+
+              // Control the attachment info via apply_filters: 'lvl99_image_import/attachment'
+              $attachment = apply_filters( $this->textdomain.'/attachment', $attachment );
+
+              // Insert image into WP Media Library
+              $attach_id = wp_insert_attachment( $attachment, $image_path );
+
+              // Success
+              if ( $attach_id > 0 )
+              {
+                // Meta data
+                $attach_data = wp_generate_attachment_metadata( $attach_id, $filename );
+
+                // Control the attachment metadata via apply_filters: 'lvl99_image_import/attachment_metadata'
+                $attach_data = apply_filters( $this->textdomain.'/attachment_metadata', $attach_data );
+
+                wp_update_attachment_metadata( $attach_id, $attach_data );
+                $images_imported[$hash] = $image;
+
+              // Error
+              } else {
+                $image['status'] = 'error_wp';
+                $images_excluded[$hash] = $image;
+              }
+            }
+          } else {
+            $image = array(
+              'status' => 'error_incorrect_image_array_format',
+              'image' => $image,
+            );
+            $images_excluded[$hash] = $image;
+          }
+        }
+      }
+
+      // Update results
+      $this->results['images_imported'] = $images_imported;
+      $this->results['images_excluded'] = $images_excluded;
     }
 
     /*
-    Change all image references
+    Update all image references
 
-    @method change_image_references
+    @method update_image_references
+    @private
     @since 0.1.0
     @returns {Void}
     */
-    public function change_image_references ()
+    private function update_image_references ()
     {
       global $wpdb;
 
       $this->check_admin();
 
       // Images to change within posts
-      $images = $this->route->request['post']['images'];
+      $images = $this->results['images_imported'];
+      $images_search = array();
+      $images_replace = array();
+      $images_imported = array();
+      $images_excluded = array();
+      $posts_search = array();
+      $posts_affected = array();
+      $posts_excluded = array();
+
+      // Iterate over images to get search/replace terms and posts to update
+      if ( count($images > 0) )
+      {
+        foreach ( $images as $hash => $image )
+        {
+          if ( !is_array($image) || !array_key_exists('src', $image) || !array_key_exists('as', $image) || !array_key_exists('posts', $image) )
+          {
+            $image = array(
+              'status' => 'error_incorrect_image_array_format',
+              'image' => $image,
+            );
+            $images_excluded[$hash] = $image;
+            continue;
+          }
+
+          // Make an array of all images src and as to search/replace with
+          $images_search[] = '/' . preg_quote($image['src'], '/') . '\??[^"]*/'; // Add query var match to strip
+          $images_replace[] = $image['as'];
+
+          // Make an array of affected posts and then iterate over that, instead of per image
+          $this->debug( array(
+            'update_image_reference:pre' => $image,
+          ) );
+          $image['posts'] = $this->to_array($image['posts']);
+          $this->debug( array(
+            'update_image_reference:post' => $image,
+          ) );
+          foreach ( $image['posts'] as $post_id )
+          {
+            if ( !in_array($post_id, $posts_search) )
+            {
+              array_push( $posts_search, $post_id );
+            }
+          }
+
+          $images_imported[$hash] = $image;
+        }
+
+        // Iterate over all posts affected to update
+        if ( count($posts_search) > 0 )
+        {
+          foreach ( $posts_search as $post_id )
+          {
+            $post_id = $this->sanitise_option_number($post_id);
+            $post_type = get_post_type($post_id);
+            $update_post = array(
+              'ID' => $post_id,
+            );
+
+            // Attachment updates guid
+            if ( $post_type == 'attachment' )
+            {
+              $guid = get_the_guid( $post_id );
+              $guid = preg_replace( $images_search, $images_replace, $guid );
+
+              if ( !is_null($guid) ) $update_post['guid'] = $guid;
+
+            // All other posts
+            } else {
+              $post_content = get_the_content( $post_id );
+              $post_content = preg_replace( $images_search, $images_replace, $post_content );
+
+              if ( !is_null($post_content) ) $update_post['post_content'] = $post_content;
+            }
+
+            $this->debug( array(
+              'post_type' => $post_type,
+              'update_post' => $update_post,
+            ) );
+
+            // Ensure guid or post_content has been updated
+            if ( array_key_exists('guid', $update_post) || array_key_exists('post_content', $update_post) )
+            {
+              // Success
+              if ( wp_update_post($update_post) )
+              {
+                array_push( $posts_affected, $post_id );
+
+              // Error
+              } else {
+                $this->admin_error( 'Couldn\'t update image references for post '.$post_id );
+                array_push( $posts_excluded, $post_id );
+              }
+            } else {
+              $this->admin_error( 'Couldn\'t update image references for post '.$post_id );
+              array_push( $posts_excluded, $post_id );
+            }
+          }
+        }
+      }
+
+      // Update results
+      $this->results['images_search'] = $images_search;
+      $this->results['images_replace'] = $images_replace;
+      $this->results['images_imported'] = $images_imported;
+      $this->results['images_excluded'] = $images_excluded;
+      $this->results['posts_search'] = $posts_search;
+      $this->results['posts_affected'] = $posts_affected;
+      $this->results['posts_excluded'] = $posts_excluded;
+    }
+
+    /*
+    Download the image. If successful, returns the string of where the image is located, else returns `FALSE`.
+
+    @method download_image
+    @private
+    @since 0.1.0
+    @param {String} $image_url The URL to download the image
+    @param {String} $image_dest The path to put the image
+    @returns {Mixed} {String} the image's uploaded location, or {Boolean} FALSE on error
+    */
+    private function download_image ( $image_url, $image_dest )
+    {
+      // Only download if it doesn't already exist
+      if ( !file_exists($image_dest) )
+      {
+        $ch = curl_init($image_url);
+        $fp = fopen($image_dest, 'wb');
+        curl_setopt($ch, CURLOPT_FILE, $fp);
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
+        curl_exec($ch);
+
+        // Error
+        if ( curl_error($ch) )
+        {
+          $this->admin_error('Couldn\'t download image: <code>'.$image_url.'</code>');
+          error_log( 'cURL error downloading image: ' . $image_url );
+          curl_close($ch);
+          fclose($fp);
+          return FALSE;
+
+        // Success
+        } else {
+          curl_close($ch);
+          fclose($fp);
+          return $image_dest;
+        }
+
+      // Image already exists at the destination, so use that
+      } else {
+        return $image_dest;
+      }
+    }
+
+    /*
+    Convert string to array
+
+    @method to_array
+    @since 0.1.0
+    @param {String} $input The string to convert to an array
+    @param {String} $delimiter The string to use as a delimiter (defaults to `,`)
+    @returns {Array}
+    */
+    public function to_array ( $input, $delimiter = ',' )
+    {
+      $output = array();
+
+      // Convert string to array
+      if ( is_string($input) )
+      {
+        // Check for delimiter and explode if it exists
+        if ( strstr($input, $delimiter) !== FALSE )
+        {
+          $output = explode($delimiter, $input);
+
+        // No delimiter, assume single-item array
+        } else {
+          $output = array($input);
+        }
+
+      // Already array
+      } else if ( is_array($input) ) {
+        $output = $input;
+      }
+
+      return $output;
+    }
+
+    /*
+    Output something to the debug output
+
+    @method debug
+    @private
+    @since 0.1.0
+    @param {Mixed} $input The input to output to the debug
+    @returns {Void}
+    */
+    private function debug ( $input )
+    {
+      $trace = debug_backtrace();
+
+      $this->results['debug'] = array(
+        '_time' => time(),
+        '_output' => $input,
+        '_callee_method' => $trace[1]['function'],
+      );
     }
   }
 }

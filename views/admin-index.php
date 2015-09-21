@@ -19,4 +19,9 @@ if ( $action == 'imported' ) include( 'admin-imported.php' );
 // if ( $action == 'options' ) include( 'admin-options.php' );
 if ( $action == 'help' ) include( 'admin-help.php' );
 
+echo '<pre>';
+var_dump($lvl99_image_import->route);
+var_dump($lvl99_image_import->results);
+echo '</pre>';
+
 ?>

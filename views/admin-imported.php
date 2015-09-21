@@ -31,20 +31,23 @@ $posts_affected = $lvl99_image_import->results['posts_affected'];
     <?php if ( !empty($images_imported) && count($images_imported) > 0 ) : ?>
     <div class="lvl99-plugin-intro">
       <?php if ( $importtype == 'medialibrary' ) : ?>
-      <?php echo sprintf( __('Importing %d images into the Media Library...', $textdomain), count($images_imported) ); ?>
+      <?php echo sprintf( __('Imported %d images into the Media Library and changed image references in %d posts', $textdomain), count($images_imported), count($posts_affected) ); ?>
       <?php elseif ( $importtype == 'change' ) : ?>
       <?php echo sprintf( __('Changed %d image references in %d posts', $textdomain), count($images_imported), count($posts_affected) ); ?>
       <?php endif; ?>
     </div>
 
     <ul class="lvl99-import-image-imported-list">
-      <?php if ( $importtype == 'change' ) : ?>
       <?php foreach( $images_imported as $num => $image ) : ?>
       <li class="lvl99-import-image-imported-item">
-        Changed <i><?php echo $image['src']; ?></i> to <b><?php echo $image['as']; ?></b> (found in <?php echo count($image['posts']); ?> posts)
+        <?php if ( $importtype == 'medialibrary' ) : ?>
+        <p><?php echo sprintf( __('Imported <code>%s</code><br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;to <code>%s</code>', $textdomain), $image['src'], $image['as'] ); ?></p>
+        <?php endif; ?>
+        <?php if ( $importtype == 'change' ) : ?>
+        <p><?php echo sprintf( __('Changed image reference <code>%s</code><br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;to <code>%s</code><br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;in %d posts: <code>%s</code>', $textdomain), $image['src'], $image['as'], count($image['posts']), implode(',', $image['posts']) ); ?></p>
+        <?php endif; ?>
       </li>
       <?php endforeach; ?>
-      <?php endif; ?>
     </ul>
     <?php else : ?>
     <p>Something didn't work correctly...</p>
