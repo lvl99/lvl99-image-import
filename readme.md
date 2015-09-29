@@ -8,6 +8,18 @@ Author: Matt Scheurich <matt@lvl99.com>
 LVL99 Image Import is a WordPress plugin which allows you to easily import into the Media Library (or change) any images referenced within post content. This was developed to aid importing [WordPress.com](http://www.wordpress.com/) hosted images into self-hosted WP sites for easy transition.
 
 
+## Features
+
+* Scans all posts for any image references within the `post_content` (also works on attachments by scanning the `guid` field)
+* Import image references to Media Library and automatically updates image references within the posts to the locally hosted files
+* Resize imported images if they exceed a certain size (can keep original files or overwrite to save space)
+* Change image references (e.g. changing references from one subdomain to another)
+* Change image references to smaller thumbnail sizes if their size exceeds a certain value
+* *Extras* allow you further actions to manage the images/files on your site:
+  - Scan for broken attachment links (currently a Work In Progress). Sometimes WordPress.com file imports don't go successfully, which means you get a broken/dead link in your database. Not cool!
+  - Set post's featured image to first detected attached image (only planned -- nothing completed yet)
+
+
 ## Installation
 
 1. Download files and place in your WordPress plugins directory
@@ -28,13 +40,14 @@ LVL99 Image Import is a WordPress plugin which allows you to easily import into 
 
 * Visit [github.com/lvl99/lvl99-image-import](http://www.github.com/lvl99/lvl99-image-import) for news and updates
 * Fork development of this plugin at [github.com/lvl99/lvl99-image-import](http://www.github.com/lvl99/lvl99-image-import)
-* Consider supporting this free plugin's creation and development by donation
+* Consider supporting this free plugin's creation and development by submitting bug reports, contributing to the code-base, and/or by donation
 
 
 ## Todos
 
 * Could easily be expanded to support non-image media
-* Bug fixes
+* So much refactoring needs to happen
+* Bug fixes (there are probably plenty)
 
 
 ## Licence

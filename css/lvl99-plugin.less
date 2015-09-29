@@ -7,6 +7,8 @@
   background: #fff;
   border: solid 1px #ccc;
   border-top: 0;
+
+  position: relative;
 }
 
 .lvl99-plugin-intro {
@@ -49,19 +51,54 @@
   font-weight: bold;
 }
 
+.lvl99-plugin-notice,
 .lvl99-plugin-option-help {
   > :first-child {
     margin-top: 0;
+  }
+
+  > :last-child {
+    margin-bottom: 0;
   }
 
   .small {
     color: #999;
     font-size: 0.9em;
   }
+
+  .large {
+    font-size: 1.2em;
+  }
+}
+
+.lvl99-plugin-notice {
+  padding: 1em;
+  border-radius: 5px;
+  margin-bottom: 1em;
+
+  border: solid 1px #ccc;
+  background: #eee;
+  color: #000;
+}
+
+.lvl99-plugin-notice-warning {
+  border: solid 1px #c00;
+  color: #c00;
+  background-color: #fcc;
+}
+
+.lvl99-plugin-option {
+  margin-bottom: 1em;
+}
+
+.lvl99-plugin-option-help {
+  margin-bottom: 1em;
 }
 
 .lvl99-plugin-option-help-after {
   color: #999;
+  margin-top: 1em;
+  margin-bottom: 0;
 }
 
 .lvl99-plugin-option-value {
@@ -81,6 +118,15 @@
 .lvl99-plugin-option-value-description {
   color: #999;
   font-size: 0.9em;
+}
+
+.lvl99-plugin-option-group {
+  margin-bottom: 2em;
+
+  > .lvl99-plugin-option {
+    padding-left: 2em;
+    border-left: solid 3px #eee;
+  }
 }
 
 .lvl99-sortable-handle {

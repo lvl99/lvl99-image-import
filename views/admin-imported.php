@@ -12,6 +12,7 @@ $textdomain = $lvl99_image_import->get_textdomain();
 
 $importtype = $lvl99_image_import->results['importtype'];
 $images_imported = $lvl99_image_import->results['images_imported'];
+$images_errored = $lvl99_image_import->results['images_errored'];
 $posts_affected = $lvl99_image_import->results['posts_affected'];
 ?>
 
@@ -22,7 +23,8 @@ $posts_affected = $lvl99_image_import->results['posts_affected'];
 
   <h2 class="nav-tab-wrapper">
     <a href="<?php echo trailingslashit(WP_SITEURL); ?>wp-admin/tools.php?page=lvl99-image-import&action=scan" class="nav-tab"><?php _ex('Scan &amp; Import', 'import admin page tab', $textdomain); ?></a>
-    <?php /* <a href="<?php echo trailingslashit(WP_SITEURL); ?>wp-admin/options-general.php?page=lvl99-image-import-options" class="nav-tab"><?php _ex('Options', 'options admin page tab', $textdomain); ?></a> */ ?>
+    <a href="<?php echo trailingslashit(WP_SITEURL); ?>wp-admin/tools.php?page=lvl99-image-import&action=extras" class="nav-tab"><?php _ex('Extras', 'extras admin page tab', $textdomain); ?></a>
+    <a href="<?php echo trailingslashit(WP_SITEURL); ?>wp-admin/options-general.php?page=lvl99-image-import-options" class="nav-tab"><?php _ex('Options', 'options admin page tab', $textdomain); ?></a>
     <a href="<?php echo trailingslashit(WP_SITEURL); ?>wp-admin/tools.php?page=lvl99-image-import&action=help" class="nav-tab"><?php _ex('Help', 'help admin page tab', $textdomain); ?></a>
   </h2>
 
@@ -37,24 +39,71 @@ $posts_affected = $lvl99_image_import->results['posts_affected'];
       <?php endif; ?>
     </div>
 
-    <ul class="lvl99-import-image-imported-list">
+    <ul class="lvl99-image-import-actions-list lvl99-image-import-imported-list">
       <?php foreach( $images_imported as $num => $image ) : ?>
-      <li class="lvl99-import-image-imported-item">
-        <?php if ( $importtype == 'medialibrary' ) : ?>
-        <p><?php echo sprintf( __('Imported <code>%s</code><br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;to <code>%s</code>', $textdomain), $image['src'], $image['as'] ); ?></p>
+      <li class="lvl99-image-import-action-item">
+        <dl>
+          <?php if ( $importtype == 'medialibrary' ) : ?>
+          <dt>Imported</dt>
+          <dd><code><?php echo $image['src']; ?></code></dd>
+          <dt>to</dt>
+          <dd><code><?php echo (isset($image['dl_as']) ? $image['dl_as'] : $image['as']); ?></code></dd>
+          <?php endif; ?>
+          <dt>Changed image reference</dt>
+          <dd><code><?php echo $image['src']; ?></code></dd>
+          <dt>to</dt>
+          <dd><code><?php echo $image['as']; ?></code></dd>
+          <dt>Within <?php echo count($image['posts']); ?> posts</dt>
+          <dd><code><?php echo implode(',', $image['posts']); ?></code></dd>
+          <?php if ( isset($image['process_time']) ) : ?>
+          <dt>Time taken</dt>
+          <dd><code><?php echo $image['process_time']; ?> seconds</code></dd>
         <?php endif; ?>
-        <?php if ( $importtype == 'change' ) : ?>
-        <p><?php echo sprintf( __('Changed image reference <code>%s</code><br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;to <code>%s</code><br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;in %d posts: <code>%s</code>', $textdomain), $image['src'], $image['as'], count($image['posts']), implode(',', $image['posts']) ); ?></p>
-        <?php endif; ?>
+        </dl>
       </li>
       <?php endforeach; ?>
     </ul>
+
     <?php else : ?>
-    <p>Something didn't work correctly...</p>
+    <p>Something didn't work out correctly...</p>
     <pre>
     <?php var_dump( $lvl99_image_import->results ); ?>
     </pre>
     <?php endif; ?>
+
+    <?php if ( count($images_errored) > 0 ) : ?>
+    <div class="lvl99-plugin-intro">
+      ... however <?php echo count($images_errored); ?> failed to <?php echo ( $importtype == 'medialibrary' ? 'import' : 'change' ); ?>.
+    </div>
+    <ul class="lvl99-image-import-actions-list lvl99-image-import-errored-list">
+      <?php foreach( $images_errored as $num => $image ) : ?>
+      <li class="lvl99-image-import-action-item">
+        <dl>
+          <dt>Error</dt>
+          <dd><code><?php echo $image['status']; ?></code></dd>
+          <?php if ( array_key_exists('image', $image) ) : ?>
+          <dt>Image</dt>
+          <dd><code style="display: block"><?php var_dump($image); ?></code></dd>
+          <?php else : ?>
+          <?php if ( $importtype == 'medialibrary' ) : ?>
+          <dt>Importing to</dt>
+          <dd><code><?php echo (isset($image['dl_as']) ? $image['dl_as'] : $image['as']); ?></code></dd>
+          <?php endif; ?>
+          <dt>Changing image reference</dt>
+          <dd><code><?php echo $image['src']; ?></code></dd>
+          <dt>to</dt>
+          <dd><code><?php echo $image['as']; ?></code></dd>
+          <?php endif; ?>
+          <?php if ( isset($image['process_time']) ) : ?>
+          <dt>Time taken</dt>
+          <dd><code><?php echo $image['process_time']; ?> seconds</code></dd>
+          <?php endif; ?>
+        </dl>
+      </li>
+      <?php endforeach; ?>
+    </ul>
+    <?php endif; ?>
+
   </div>
 
 </div>
