@@ -35,8 +35,6 @@ $posts_affected = $lvl99_image_import->results['posts_affected'];
 <div class="wrap">
   <h2><?php _e('Image Import', $textdomain); ?></h2>
 
-  <?php $lvl99_image_import->admin_notices(); ?>
-
   <h2 class="nav-tab-wrapper">
     <a href="<?php echo trailingslashit(WP_SITEURL); ?>wp-admin/tools.php?page=lvl99-image-import&action=scan" class="nav-tab"><?php _ex('Scan &amp; Import', 'import admin page tab', $textdomain); ?></a>
     <a href="<?php echo trailingslashit(WP_SITEURL); ?>wp-admin/tools.php?page=lvl99-image-import&action=extras" class="nav-tab"><?php _ex('Extras', 'extras admin page tab', $textdomain); ?></a>
@@ -176,9 +174,25 @@ $posts_affected = $lvl99_image_import->results['posts_affected'];
 
           <div style="text-align: right">
             <?php if ( $importtype == 'medialibrary' ) : ?>
-            <button class="button button-secondary">Import images to the Media Library and change image references within related posts</button>
+            <button id="lvl99-image-import-submit" class="button button-secondary">Import <span><?php echo count($images); ?></span> images to the Media Library and change image references within related posts</button>
             <?php elseif ( $importtype == 'change' ) : ?>
-            <button class="button button-secondary">Change image references within related posts</button>
+            <button id="lvl99-image-import-submit" class="button button-secondary">Change <span><?php echo count($images); ?></span> image references within related posts</button>
+            <?php endif; ?>
+          </div>
+        </div>
+
+        <div class="lvl99-image-import-submitted" style="display:none">
+          <div class="lvl99-plugin-notices">
+            <div class="lvl99-plugin-notice">
+              <p>Processing selected images now. Depending on the amount of images you are importing/changing, it may take a while to complete (estimated ~<b>30s</b> per image, ~<b class="time-total"></b> mins total).</p>
+              <p><b><i>Don't close this window!</i></b></p>
+              <div class="lvl99-image-import-progress">
+                <div class="lvl99-image-import-progress-bar"></div>
+              </div>
+            </div>
+            <?php $progress_log = $lvl99_image_import->progress_log_url(); ?>
+            <?php if ( $progress_log ) : ?>
+            <pre class="lvl99-image-import-progress-log" data-src="<?php echo esc_url($progress_log); ?>"></pre>
             <?php endif; ?>
           </div>
         </div>

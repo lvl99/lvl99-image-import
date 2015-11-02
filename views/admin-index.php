@@ -18,6 +18,7 @@ if ( $action == 'scanned' )     include( 'admin-import.php' );
 if ( $action == 'imported' )    include( 'admin-imported.php' );
 if ( $action == 'extras' )      include( 'admin-extras.php' );
 if ( $action == 'brokenlinks' ) include( 'admin-brokenlinks.php' );
+if ( $action == 'duplicates' )  include( 'admin-duplicates.php' );
 if ( $action == 'options' )     include( 'admin-options.php' );
 if ( $action == 'help' )        include( 'admin-help.php' );
 

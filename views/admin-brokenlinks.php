@@ -11,14 +11,10 @@ global $lvl99_image_import;
 
 $textdomain = $lvl99_image_import->get_textdomain();
 $items_scanned = $lvl99_image_import->results['items_scanned'];
-
-$lvl99_image_import->admin_warning('This is currently under construction. You can view broken links but you can\'t update them, yet...');
 ?>
 
 <div class="wrap">
   <h2><?php _e('Image Import', $textdomain); ?></h2>
-
-  <?php $lvl99_image_import->admin_notices(); ?>
 
   <h2 class="nav-tab-wrapper">
     <a href="<?php echo trailingslashit(WP_SITEURL); ?>wp-admin/tools.php?page=lvl99-image-import&action=scan" class="nav-tab"><?php _ex('Scan &amp; Import', 'import admin page tab', $textdomain); ?></a>
@@ -40,17 +36,18 @@ $lvl99_image_import->admin_warning('This is currently under construction. You ca
       <table class="widefat lvl99-image-import-table">
         <thead>
           <tr>
-            <th class="lvl99-image-import-col-do">&nbsp;</th>
-            <th class="lvl99-image-import-col-src">Found link</th>
-            <th class="lvl99-image-import-col-as">Operation</th>
+            <th class="lvl99-image-import-col-do"><input type="checkbox" name="<?php echo esc_attr($textdomain); ?>_selectall" value="true" checked="checked" /></th>
+            <th class="lvl99-image-import-col-src">Broken link</th>
+            <th class="lvl99-image-import-col-as">Update Link</th>
           </tr>
         </thead>
         <tbody>
           <?php foreach ( $items_scanned as $num => $item ) : ?>
           <tr>
-            <td class="lvl99-image-import-col-do"><input type="checkbox" name="lvl99-image-import_itemsscanned[$num][do]" value="true" checked="checked" /></td>
+            <td class="lvl99-image-import-col-do"><input type="checkbox" name="lvl99-image-import_items[<?php echo $num; ?>][do]" value="true" checked="checked" /></td>
             <td class="lvl99-image-import-col-src">
-              <input type="hidden" name="lvl99-image-import_itemsscanned[$num][ID]" value="<?php echo esc_attr($item['ID']); ?>" />
+              <input type="hidden" name="lvl99-image-import_items[<?php echo $num; ?>][ID]" value="<?php echo esc_attr($item['ID']); ?>" />
+              <input type="hidden" name="lvl99-image-import_items[<?php echo $num; ?>][src]" value="<?php echo esc_url($item['guid']); ?>" />
               <?php if ( $item['status'] == 'external' ) : ?>
               <a href="<?php echo esc_url($item['guid']); ?>" target="_blank">
                 <code><?php echo $item['guid']; ?></code>
@@ -61,10 +58,10 @@ $lvl99_image_import->admin_warning('This is currently under construction. You ca
             </td>
             <td class="lvl99-image-import-col-as">
               <?php if ( $item['status'] == 'broken' ) : ?>
-              <input type="text" name="lvl99-image-import_itemsscanned[$num][guid]" value="<?php echo esc_url($item['guid']); ?>" />
+              <input type="text" name="lvl99-image-import_items[<?php echo $num; ?>][as]" value="<?php echo esc_url($item['guid']); ?>" />
               <?php elseif ( $item['status'] == 'external' ) : ?>
               <i>External file to download</i>
-              <input type="hidden" name="lvl99-image-import_itemsscanned[$num][guid]" value="<?php echo esc_url($item['guid']); ?>" />
+              <input type="hidden" name="lvl99-image-import_items[<?php echo $num; ?>][as]" value="<?php echo esc_url($item['guid']); ?>" />
               <?php endif; ?>
             </td>
           </tr>
@@ -72,7 +69,7 @@ $lvl99_image_import->admin_warning('This is currently under construction. You ca
         </tbody>
       </table>
 
-      <?php /* <button class="button button-primary">Update and download attachment file links</button> */ ?>
+      <button class="button button-primary">Update attachment file links</button>
 
     </form>
     <?php else : ?>

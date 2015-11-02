@@ -30,7 +30,8 @@
       // Display message to encourage user to not close window.
       if ( $form.find('input[name="lvl99-image-import"][value=imported]').length === 1 ) {
         $images = $form.find('tbody .lvl99-image-import-col-do input[type=checkbox]:checked');
-        $form.append('<div class="lvl99-image-import-submitted"><div class="lvl99-plugin-notices"><div class="lvl99-plugin-notice"><p>Processing selected images now. Depending on the amount of images you are importing/changing, it may take a while to complete (estimated ~30s per image, ~'+(Math.ceil(($images.length * 30) / 60))+' mins total). <b><i>Don\'t close this window!</i></b></p><div class="lvl99-image-import-progress"><div class="lvl99-image-import-progress-bar"></div></div></div></div></div>');
+        $form.find('.time-total').text( (Math.ceil(($images.length * 30) / 60)) );
+        $form.find('.lvl99-image-import-submitted').show();
         startProgress($images.length);
       }
     });
@@ -56,15 +57,23 @@
     });
 
     // Enable/disable all scanned image references
-    $doc.on( 'change', '.lvl99-image-import-col-do input[name=lvl99-image-import_selectall]', function (event) {
+    $doc.on( 'change', 'thead input[name=lvl99-image-import_selectall]', function (event) {
       var $elem = $(this),
-          $checkboxes = $('.lvl99-image-import-col-do input[type=checkbox]');
+          $checkboxes = $('tbody .lvl99-image-import-col-do input[type=checkbox]');
 
       if ( $elem.is(':checked') ) {
         $checkboxes.attr('checked', 'checked');
+        $('button#lvl99-image-import-submit > span').text($checkboxes.filter(':checked').length);
       } else {
         $checkboxes.removeAttr('checked');
+        $('button#lvl99-image-import-submit > span').text(0);
       }
+    });
+
+    // Update number of image references to do
+    $doc.on( 'change', 'tbody .lvl99-image-import-col-do input[type=checkbox]', function (event) {
+      var $checked = $('tbody .lvl99-image-import-col-do input[type=checkbox]:checked');
+      $('button#lvl99-image-import-submit > span').text($checked.length);
     });
 
     // Add filter
@@ -100,7 +109,8 @@
     });
 
     function startProgress( totalImagesToProcess ) {
-      var $progress = $('.lvl99-image-import-progress-bar'),
+      var $progress = $('.lvl99-image-import-submitted .lvl99-image-import-progress-bar'),
+          $progressLog = $('.lvl99-image-import-submitted .lvl99-image-import-progress-log'),
           $notices = $('.lvl99-image-import-submitted .lvl99-plugin-notices');
 
       progressStart = new Date();
@@ -110,26 +120,43 @@
       // Fire every second until ya don't need to
       progressTimer = setInterval( function () {
         var now = new Date();
-        progressLength = Math.floor(((now.getTime() - progressStart.getTime()) / (progressEnd.getTime() - progressStart.getTime())) * 100);
+        progressLength = ((now.getTime() - progressStart.getTime()) / (progressEnd.getTime() - progressStart.getTime())) * 100;
 
         // console.log( (now.getTime() - progressStart.getTime()) );
         // console.log( (progressEnd.getTime() - progressStart.getTime()) );
         // console.log( ((now.getTime() - progressStart.getTime()) / (progressEnd.getTime() - progressStart.getTime())) );
         // console.log( progressLength );
 
+        // Refresh progress log
+        if ( $progressLog.length > 0 && $progressLog.attr('data-src') ) {
+          $.ajax({
+            url: $progressLog.attr('data-src'),
+            type: 'get',
+            data: {},
+            dataType: 'text',
+            success: function (data, textStatus, xhr ) {
+              $progressLog.html(data);
+              $progressLog.scrollTop( $progressLog[0].scrollHeight );
+            },
+            error: function () {
+              $progressLog.remove();
+            }
+          })
+        }
+
         // Show message if it's taking longer than expected
         if ( progressLength > 100 ) {
           if ( $notices.find('.lvl99-image-import-overtime').length === 0 ) $notices.append('<div class="lvl99-plugin-notice lvl99-plugin-notice-warning lvl99-image-import-overtime">Sorry, this is taking longer than estimated! Shouldn\'t be too long now...</div>');
           progressLength = 100;
+
+          // No need to do much more
+          if ( progressLength === 100 ) clearInterval(progressTimer);
         }
 
         // Change the length of the bar to communicate the overall progress
         $progress.css({
           width: progressLength+'%'
         });
-
-        // No need to do much more
-        if ( progressLength === 100 ) clearInterval(progressTimer);
       }, 1000 );
     }
 

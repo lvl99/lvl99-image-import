@@ -14,8 +14,6 @@ $textdomain = $lvl99_image_import->get_textdomain();
 <div class="wrap">
   <h2><?php _e('Image Import', $textdomain); ?></h2>
 
-  <?php $lvl99_image_import->admin_notices(); ?>
-
   <h2 class="nav-tab-wrapper">
     <a href="<?php echo trailingslashit(WP_SITEURL); ?>wp-admin/tools.php?page=lvl99-image-import&action=scan" class="nav-tab"><?php _ex('Scan &amp; Import', 'scan admin page tab', $textdomain); ?></a>
     <a href="<?php echo trailingslashit(WP_SITEURL); ?>wp-admin/tools.php?page=lvl99-image-import&action=extras" class="nav-tab"><?php _ex('Extras', 'extras admin page tab', $textdomain); ?></a>

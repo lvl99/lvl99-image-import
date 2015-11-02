@@ -14,8 +14,6 @@ $textdomain = $lvl99_image_import->get_textdomain();
 <div class="wrap">
   <h2><?php _e('Image Import', $textdomain); ?></h2>
 
-  <?php $lvl99_image_import->admin_notices(); ?>
-
   <h2 class="nav-tab-wrapper">
     <a href="<?php echo trailingslashit(WP_SITEURL); ?>wp-admin/tools.php?page=lvl99-image-import&action=scan" class="nav-tab"><?php _ex('Scan &amp; Import', 'import admin page tab', $textdomain); ?></a>
     <a href="<?php echo trailingslashit(WP_SITEURL); ?>wp-admin/tools.php?page=lvl99-image-import&action=extras" class="nav-tab nav-tab-active"><?php _ex('Extras', 'extras admin page tab', $textdomain); ?></a>
@@ -32,8 +30,14 @@ $textdomain = $lvl99_image_import->get_textdomain();
     <ul class="lvl99-image-import-extras-list">
       <li>
         <h3><a href="<?php echo trailingslashit(WP_SITEURL); ?>wp-admin/tools.php?page=lvl99-image-import&action=brokenlinks">Scan for broken or external file links</a></h3>
-        <p>Scans all attachments in the database and detects if the file is there or not. When importing WordPress.com data, sometimes file links don't download properly and leave broken unfixable links in their wake.</p>
-        <?php /* <p>If any external attachment links are found, they can also be downloaded to the server.</p> */ ?>
+        <p>When importing WordPress.com data, sometimes file links don't download properly and leave broken unfixable links in their wake (namely if your server doesn't support connecting to SSL, like when developing on a MAMP localhost server). Using this tool you can edit the broken links to link to external files to then be downloaded to the server and updated in the database.</p>
+      </li>
+      <li>
+        <h3><a href="<?php echo trailingslashit(WP_SITEURL); ?>wp-admin/tools.php?page=lvl99-image-import&action=duplicates">Scan for duplicate file links</a></h3>
+        <p>If WordPress Importer finds an attachment that already exists on your server it will append a <code>1</code> on the end of the new file name and import the file again. This means you may have multiple copies of the same file under different names on your server and in your database.</p>
+        <div class="lvl99-plugin-notice lvl99-plugin-notice-warning">
+          <p>Note:</b> This operation goes through all your attachments which have a <code><i>filename</i><b>1</b><i>.ext</i></code> and detects if an equivalent <code><i>filename.ext</i></code> exists on the server and in the database as well. If you have a lot of attachments, then expect it to take a while before you see anything!</p>
+        </div>
       </li>
     </ul>
 
