@@ -25,7 +25,7 @@ $textdomain = $lvl99_image_import->get_textdomain();
     <form method="post" action="options.php">
       <?php settings_fields( $textdomain ); ?>
       <?php do_settings_sections( $textdomain ); ?>
-      <?php $lvl99_image_import->render_options( $this->default_options, TRUE ); ?>
+      <?php $lvl99_image_import->render_options( $lvl99_image_import->default_options, TRUE ); ?>
       <?php submit_button(); ?>
     </form>
   </div>
