@@ -757,10 +757,20 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
           if ( !array_key_exists('sanitise_callback', $option) ) $option['sanitise_callback'] = NULL;
 
           // Get the database's value
-          $this->options[$name] = get_option( 'lvl99-image-import/' . $name, $option['default'] );
+          $this->options[$name] = get_option( $this->textdomain . '/' . $name, $option['default'] );
 
-          // Register the setting to be available to all other plugins (I think?)
-          if ( $init && !is_null($option['sanitise_callback']) ) register_setting( $this->textdomain, 'lvl99-image-import/' . $name, $option['sanitise_callback'] );
+          // Register the setting
+          if ( $init )
+          {
+            if ( !is_null($option['sanitise_callback']) )
+            {
+              register_setting( $this->textdomain, $this->textdomain . '/' . $name, $option['sanitise_callback'] );
+            }
+            else
+            {
+              register_setting( $this->textdomain, $this->textdomain . '/' . $name );
+            }
+          }
         }
       }
     }
