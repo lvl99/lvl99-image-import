@@ -131,7 +131,7 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
     @private
     @type {String}
     */
-    private $progress_log_file = FALSE;
+    private $progress_log_file = 'lvl99-image-import_progress.log';
 
     /*
     The results array holding info about what has been actioned upon.
@@ -1480,9 +1480,6 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
     {
       $this->check_admin();
 
-      // Start progress
-      // $this->new_progress_log('scanned');
-
       // Do whatever here
       $this->scan_posts();
 
@@ -1509,9 +1506,6 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
     public function route_imported ()
     {
       $this->check_admin();
-
-      // Start progress
-      $this->new_progress_log('import');
 
       // Import the images into the media library
       $this->results['importtype'] = $this->route['request']['post']['importtype'];
@@ -1551,10 +1545,6 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
     public function route_brokenlinks ()
     {
       $this->check_admin();
-
-      // Start progress
-      $this->new_progress_log('brokenlinks');
-
       $this->scan_brokenlinks();
 
       if ( count($this->results['items_scanned']) > 0 )
@@ -1616,10 +1606,6 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
     public function route_duplicates ()
     {
       $this->check_admin();
-
-      // Start progress
-      $this->new_progress_log('duplicates');
-
       $this->scan_duplicates();
 
       if ( count($this->results['items_scanned']) > 0 )
@@ -1668,6 +1654,29 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
       }
 
       $_REQUEST['action'] = 'extras';
+    }
+
+    /*
+    Scan and correct incorrect GUID file names
+
+    @method route_guids
+    @since 0.1.0
+    @returns {Void}
+    */
+    public function route_guids ()
+    {
+      $this->check_admin();
+      $this->scan_guids();
+
+      if ( count($this->results['items_scanned']) > 0 )
+      {
+        $_REQUEST['action'] = 'guids';
+      }
+      else
+      {
+        $this->admin_notice( 'No incorrect GUID file names were detected. Good job!' );
+        $_REQUEST['action'] = 'extras';
+      }
     }
 
     /*
@@ -2252,6 +2261,9 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
 
       $this->check_admin();
 
+      // Start progress
+      $this->new_progress_log('import');
+
       // Import options
       $upload_dir = wp_upload_dir();
       // $removequerystrings = isset($this->route['request']['post']['removequerystrings']) ? $this->sanitise_option_boolean($this->route['request']['post']['removequerystrings']) : FALSE;
@@ -2444,6 +2456,39 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
                 $this->debug('-- Referenced image exceeds `maximgwidth`. Using thumbnail `'.$maximgthumbnail.'` file '.$attach_data['sizes'][$maximgthumbnail]['file']);// echo '<pre>-- Image exceeds '.$maximgwidth.', changing reference to use '.$maximgthumbnail.': '.$attach_data['sizes'][$maximgthumbnail]['file'].'</pre>';
                 $image['full_as'] = $image_url;
                 $image['as'] = $this->get_upload_url( trailingslashit($filedir) . $attach_data['sizes'][$maximgthumbnail]['file'], FALSE, FALSE );
+
+                $thumb_filedir = $filedir;
+                $thumb_file = $attach_data['sizes'][$maximgthumbnail]['file'];
+                $thumb_filepath = $this->get_upload_path( trailingslashit($thumb_filedir) . $thumb_file );
+
+                $this->debug( array(
+                  'image_path' => $image_path,
+                  'image_url' => $image_url,
+                  'thumb_filedir' => $thumb_filedir,
+                  'thumb_file' => $thumb_file,
+                  'thumb_filepath' => $thumb_filepath,
+                  'thumb_exists' => file_exists( $thumb_filepath ),
+                ) );
+
+                // Check if thumbnail actually exists
+                if ( !file_exists($thumb_filepath) )
+                {
+                  $this->debug('-- No thumbnail file found. Generating attachment data (thumbnails)');// echo '<pre>-- Generating attachment data for '.$image_path.'</pre>';
+
+                  // Don't time out!
+                  set_time_limit(0);
+
+                  // Meta data
+                  $attach_data = wp_generate_attachment_metadata( $attach_id, $image_path );
+
+                  // Control the attachment metadata via apply_filters: 'lvl99_image_import/attachment_metadata'
+                  $attach_data = apply_filters( $this->textdomain.'/attachment_metadata', $attach_data );
+                  wp_update_attachment_metadata( $attach_id, $attach_data );
+
+                  $this->debug('-- Finished generating attachment data (thumbnails)');// echo '<pre>-- Generated attachment data.</pre>';
+
+                  $image['as'] = $this->get_upload_url( trailingslashit($filedir) . $attach_data['sizes'][$maximgthumbnail]['file'], FALSE, FALSE );
+                }
               }
 
               $this->debug('-- Finished importing image');// echo '<pre>-- Finished '.$image_path.'</pre>';
@@ -2521,9 +2566,9 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
                 // If the image is larger than the maximum threshold, then use the maximgthumbnail file
                 if ( !empty($maximgthumbnail) &&
                       $attach_data &&
-                      array_key_exists('sizes', $attach_data) &&
-                      array_key_exists($maximgthumbnail, $attach_data['sizes']) &&
-                      array_key_exists('file', $attach_data['sizes'][$maximgthumbnail]) &&
+                      array_key_exists( 'sizes', $attach_data ) &&
+                      array_key_exists( $maximgthumbnail, $attach_data['sizes'] ) &&
+                      array_key_exists( 'file', $attach_data['sizes'][$maximgthumbnail] ) &&
                       $maximgwidth > 0 &&
                       $attach_data['width'] > $maximgwidth )
                 {
@@ -2713,8 +2758,14 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
                 // Update the guid
                 if ( isset($guid) && !is_null($guid) )
                 {
+                  if ( $guid != $post['guid'] )
+                  {
+                    $this->debug( '-- Updated attachment #'.$post['ID'].' guid from '.$post['guid']."\n".'   to ' . $guid );
+                    // @TODO if the guid from is same as guid to, then ignore updating? WP errors if detects no change to updated attachment, so may need to skip the update WP db step
+                  } else {
+                    $this->debug( '-- New guid is the same as old guid!' );
+                  }
                   $update_post['guid'] = $guid;
-                  $this->debug( '-- Updated attachment #'.$post['ID'].' guid from '.$post['guid']."\n".'   to ' . $guid );
                 }
 
               // All other posts
@@ -3155,6 +3206,9 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
 
       $this->check_admin();
 
+      // Start progress
+      $this->new_progress_log('brokenlinks');
+
       require_once( ABSPATH . 'wp-admin/includes/image.php' );
 
       // Get the scanned and changed items to process
@@ -3392,6 +3446,11 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
     */
     private function fix_duplicates ( $items )
     {
+      $this->check_admin();
+
+      // Start progress
+      $this->new_progress_log('duplicates');
+
       $items_completed = array();
       $items_errored = array();
       $items_excluded = array();
@@ -3449,8 +3508,95 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
       $this->results['items_errored'] = $items_errored;
       $this->results['items_excluded'] = $items_excluded;
 
-      $this->debug( $items_search );
-      $this->debug( $items_replace );
+      // $this->debug( $items_search );
+      // $this->debug( $items_replace );
+    }
+
+    /*
+    Scan GUIDs to ensure that it references correct file name.
+
+    @method scan_guids
+    @returns {Void}
+    */
+    private function scan_guids ()
+    {
+      global $wpdb;
+
+      $this->check_admin();
+
+      // Start progress
+      $this->new_progress_log('guids');
+
+      $items_scanned = array();
+      $items_completed = array();
+      $items_errored = array();
+
+      // Query
+      $query = "SELECT ID, guid, post_type, post_mime_type FROM $wpdb->posts WHERE $wpdb->posts.post_type = 'attachment'";
+      $attachments = $wpdb->get_results( $query, ARRAY_A );
+      $upload_dir = wp_upload_dir();
+
+      if ( count($attachments) > 0 )
+      {
+        foreach( $attachments as $num => $att )
+        {
+          // Add to scanned
+          $items_scanned[] = $att;
+
+          // Get guid and filename info
+          $guid_file = array();
+          $guid_pathinfo = pathinfo($att['guid']);
+          $guid_filename = basename( $guid_pathinfo['filename'] . '.' . $guid_pathinfo['extension'] );
+          $preg_guid_file = preg_match( '/^.*\/(\d{4}\/\d{2}\/' . $guid_filename . ')$/i', $att['guid'], $guid_file );
+          $meta_info = wp_get_attachment_metadata( $att['ID'], TRUE );
+          $meta_file = $meta_info['file'];
+          $meta_filename = basename( $meta_info['file'] );
+
+          $guid_file = count($guid_file) > 0 ? $guid_file[1] : $guid_filename;
+
+          $att_info = array(
+            'ID' => $att['ID'],
+            'post_type' => $att['post_type'],
+            'post_mime_type' => $att['post_mime_type'],
+            'guid_file' => $guid_file,
+            'guid_filename' => $guid_filename,
+            'guid_matches' => $preg_guid_matches,
+            'meta_file' => $meta_file,
+            'meta_filename' => $meta_filename,
+            'old_guid' => $att['guid'],
+            'new_guid' => str_replace( $guid_file, $meta_file, $att['guid'] ),
+          );
+
+          // Different, so update
+          if ( $guid_filename != $meta_filename && !empty($meta_filename) )
+          {
+            // Update the GUID value
+            $sql_update = $wpdb->prepare( "UPDATE $wpdb->posts SET `guid` = '%s' WHERE `ID` = %d", $att_info['new_guid'], $att_info['ID']);
+            $att_info['query'] = $sql_update;
+
+            // Perform the query
+            if ( $wpdb->query( $sql_update ) === FALSE )
+            {
+              // Add to errored
+              $att_info['status'] = 'wpdb_query_error';
+              $items_errored[] = $att_info;
+            }
+            else
+            {
+              // Add to completed
+              $items_completed[] = $att_info;
+            }
+          }
+        }
+      }
+
+      $this->results['items_scanned'] = $items_scanned;
+      $this->results['items_completed'] = $items_completed;
+      $this->results['items_errored'] = $items_errored;
+
+      // $this->debug( $items_scanned );
+      // $this->debug( $items_completed );
+      // $this->debug( $items_errored );
     }
 
     /*
@@ -3461,10 +3607,10 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
     */
     private function new_progress_log ( $type = 'progress' )
     {
-      if ( !$this->progress_log_file )
+      if ( !$this->has_progress_log() )
       {
         // Progress log file
-        $this->progress_log_file = 'lvl99-image-import'.( !empty($type) ? '_'.$type : '' ).'.log';
+        $this->progress_log_file = 'lvl99-image-import'.( !empty($type) ? '_' . $type : '' ).'.log';
         $fo = fopen( trailingslashit($this->plugin_dir) . trailingslashit('logs') . $this->progress_log_file, 'wb' );
         fwrite( $fo, "---------------------------------------------------------------------\n### LVL99 Image Import progress log started: ". date('Y-m-d H:i:s') ." ###\n---------------------------------------------------------------------\n" );
         fclose($fo);
@@ -3488,7 +3634,7 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
     */
     private function log_progress ( $msg )
     {
-      if ( is_string($this->progress_log_file) )
+      if ( $this->has_progress_log() )
       {
         if ( is_array($msg) || is_object($msg) )
         {
@@ -3500,7 +3646,7 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
 
         if ( !is_array($msg) && !is_object($msg) )
         {
-          $fo = fopen( trailingslashit($this->plugin_dir) . trailingslashit('logs') . $this->progress_log_file, 'ab' );
+          $fo = fopen( $this->progress_log_path(), 'ab' );
           fwrite( $fo, date('[H:i:s] ') . $msg ."\n" );
           fclose($fo);
         }
@@ -3515,7 +3661,7 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
     */
     public function has_progress_log ()
     {
-      if ( is_string($this->progress_log_file) )
+      if ( is_string($this->progress_log_file) && file_exists($this->progress_log_path()) )
       {
         return $this->progress_log_file;
       }
@@ -3531,9 +3677,23 @@ if ( !class_exists( 'LVL99_Image_Import' ) )
     */
     public function progress_log_url ()
     {
-      if ( $this->progress_log_file )
+      if ( $this->has_progress_log() )
       {
         return trailingslashit( $this->plugin_url ) . trailingslashit('logs') . $this->progress_log_file;
+      }
+    }
+
+    /*
+    The progress log file path
+
+    @method progress_log_path
+    @returns {String}
+    */
+    private function progress_log_path ()
+    {
+      if ( is_string($this->progress_log_file) )
+      {
+        return trailingslashit( $this->plugin_dir ) . trailingslashit('logs') . $this->progress_log_file;
       }
     }
   }

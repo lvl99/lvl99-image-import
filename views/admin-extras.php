@@ -39,6 +39,10 @@ $textdomain = $lvl99_image_import->get_textdomain();
           <p>Note:</b> This operation goes through all your attachments which have a <code><i>filename</i><b>1</b><i>.ext</i></code> and detects if an equivalent <code><i>filename.ext</i></code> exists on the server and in the database as well. If you have a lot of attachments, then expect it to take a while before you see anything!</p>
         </div>
       </li>
+      <li>
+        <h3><a href="<?php echo trailingslashit(WP_SITEURL); ?>wp-admin/tools.php?page=lvl99-image-import&action=guids">Scan for incorrect filenames</a></h3>
+        <p>GUIDs should direct to original attachment files. Use this tool to check and correct any GUIDs which may have been changed.</p>
+      </li>
     </ul>
 
   </div>

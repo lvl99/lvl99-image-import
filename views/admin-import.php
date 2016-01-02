@@ -154,7 +154,7 @@ $posts_affected = $lvl99_image_import->results['posts_affected'];
               </td>
               <td class="lvl99-image-import-col-as">
                 <?php if ( $importtype == 'medialibrary' ) : ?>
-                <?php /* <code><?php echo $upload_path; ?></code> */ ?>
+                <code><?php echo $upload_path; ?></code>
                 <?php endif; ?>
                 <input type="text" name="<?php echo esc_attr($textdomain); ?>_images[<?php echo esc_attr($hash); ?>][as]" value="<?php echo esc_attr($image['as']); ?>" />
                 <input type="hidden" name="<?php echo esc_attr($textdomain); ?>_images[<?php echo esc_attr($hash); ?>][posts]" value="<?php echo esc_attr(implode(',', $image['posts'])); ?>" />
@@ -199,10 +199,12 @@ $posts_affected = $lvl99_image_import->results['posts_affected'];
       </form>
 
     <?php else : ?>
+    <?php /*
     <p>Something didn't work correctly...</p>
     <pre>
     <?php var_dump( $lvl99_image_import->results ); ?>
     </pre>
+    <?php */ ?>
     <?php endif; ?>
   </div>
 
