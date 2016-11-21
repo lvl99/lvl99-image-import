@@ -189,6 +189,16 @@ $medialibrary_options['maximgthumbnail']['default'] = $maximgthumbnail;
         <div class="lvl99-plugin-option-help">
           <p>Apply filters to include, exclude or change image references.</p>
           <p class="small">Plain text matches work, and if you're fancy you can also use <a href="http://www.regex101.com" target="_blank">PCRE regular expressions</a>. <b>Note:</b> The order of filters will also affect whether an item is included or excluded (recommended to put excludes first, includes second and search &amp; replace filters last).</p>
+          <?php
+            $upload_dir = wp_upload_dir();
+            $use_year_month_folder = get_option('uploads_use_yearmonth_folders');
+            $filter = array(
+              'type' => 'replace',
+              'input' => '/' . preg_quote(trailingslashit($upload_dir['baseurl'])) . ( $use_year_month_folder == 1 ? '(\d+)' . preg_quote(trailingslashit('')) . '(\d+)' . preg_quote(trailingslashit('')) : '' ) . '(.*)/',
+              'output' => ( $use_year_month_folder == 1 ? '$1/$2/$3' : '$1' ),
+            );
+          ?>
+          <a href="#" data-lvl99-image-import-add-filter="<?php echo esc_attr(json_encode($filter)); ?>">Add site's Search &amp; Replace filter</a>
         </div>
 
         <div class="lvl99-image-import-filters lvl99-sortable">

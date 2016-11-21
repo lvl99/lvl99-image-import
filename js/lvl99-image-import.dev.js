@@ -10,6 +10,22 @@
         progressLength = 0,
         progressTimer = 0;
 
+    function newFilter (filter) {
+      var rand = 'a'+(new Date().getTime()+'').slice(-8, -1);
+
+      // Filter options
+      filter = $.extend({
+        id: rand,
+        type: 'include',
+        input: '',
+        output: ''
+      }, filter);
+
+      var $newFilter = $('<div class="lvl99-image-import-filter-item ui-draggable ui-sortable"><div class="lvl99-image-import-filter-method"><span class="fa-arrows-v lvl99-sortable-handle"></span><select name="lvl99-image-import_filters['+filter.id+'][method]"><option value="include" '+(filter.type === 'include' ? 'selected="selected"' : '')+'>Include if matches...</option><option value="exclude" '+(filter.type === 'exclude' ? 'selected="selected"' : '')+'>Exclude if matches...</option><option value="replace" '+(filter.type === 'replace' ? 'selected="selected"' : '')+'>Search &amp; Replace</option></select></div><div class="lvl99-image-import-filter-input"><input type="text" name="lvl99-image-import_filters['+filter.id+'][input]" value="'+(filter.input)+'" placeholder="Search for..." /></div><div class="lvl99-image-import-filter-output"><input type="text" name="lvl99-image-import_filters['+filter.id+'][output]" value="'+(filter.output)+'" placeholder="Replace with empty string" '+(filter.type !== 'replace' ? 'style="display: none"' : '')+' /></div><div class="lvl99-import-image-filter-controls"><a href="#remove-filter" class="button button-secondary button-small">Remove</a></div></div>');
+
+      $newFilter.appendTo('.lvl99-image-import-filters');
+    }
+
     // Show/hide medialibrary options if option is selected
     $doc.on( 'change', 'input[name="lvl99-image-import_importtype"]', function (event) {
       var $elem = $('input[name="lvl99-image-import_importtype"][value=medialibrary]');
@@ -77,13 +93,27 @@
     });
 
     // Add filter
-    $doc.on( 'click', 'a[href=#add-filter]', function (event) {
-      var rand = 'a'+(new Date().getTime()+'').slice(-8, -1),
-          $newFilter = $('<div class="lvl99-image-import-filter-item ui-draggable ui-sortable"><div class="lvl99-image-import-filter-method"><span class="fa-arrows-v lvl99-sortable-handle"></span><select name="lvl99-image-import_filters['+rand+'][method]"><option value="include">Include if matches...</option><option value="exclude">Exclude if matches...</option><option value="replace">Search &amp; Replace</option></select></div><div class="lvl99-image-import-filter-input"><input type="text" name="lvl99-image-import_filters['+rand+'][input]" value="" placeholder="Search for..." /></div><div class="lvl99-image-import-filter-output"><input type="text" name="lvl99-image-import_filters['+rand+'][output]" value="" placeholder="Replace with empty string" style="display: none" /></div><div class="lvl99-import-image-filter-controls"><a href="#remove-filter" class="button button-secondary button-small">Remove</a></div></div>');
-
+    $doc.on( 'click', 'a[href="#add-filter"]', function (event) {
       event.preventDefault();
-      $newFilter.appendTo('.lvl99-image-import-filters');
+      newFilter();
     });
+
+    // Add domain's search & replace filter
+    $doc.on( 'click', '[data-lvl99-image-import-add-filter]', function (event) {
+      event.preventDefault();
+      var filter = $(this).attr('data-lvl99-image-import-add-filter')
+
+      console.log(filter)
+
+      // Filter is set and has value
+      if (filter) {
+        // Parse JSON
+        filter = JSON.parse(filter)
+        if (filter) {
+          newFilter(filter);
+        }
+      }
+    })
 
     // Change filter type
     $doc.on( 'change', '.lvl99-image-import-filter-method select', function (event) {
@@ -103,7 +133,7 @@
     })
 
     // Remove filter
-    $doc.on( 'click', 'a[href=#remove-filter]', function (event) {
+    $doc.on( 'click', 'a[href="#remove-filter"]', function (event) {
       var $filter = $(this).parents('.lvl99-image-import-filter-item');
       $filter.remove();
     });
